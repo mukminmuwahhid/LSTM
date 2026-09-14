@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Electricity Forecast — Bukit Mahkota</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>
+  (function(){
+    try{
+      var saved = localStorage.getItem('theme');
+      if(saved) document.documentElement.setAttribute('data-theme', saved);
+    }catch(e){}
+  })();
+</script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="mark">⚡</span> Electricity Forecast <span style="color:var(--fg-faint); font-weight:400;">/ Bukit Mahkota</span>
+    </a>
+    <nav class="topnav">
+      <a href="index.html" class="active"><span class="full">Dashboard</span></a>
+      <a href="predict.html"><span class="full">Predict</span></a>
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">LSTM · Residential electricity forecasting</div>
+      <h1>Hourly consumption for <span class="accent">Bukit Mahkota, Bangi</span>, modelled and explained.</h1>
+      <p>A 2-layer LSTM trained on a year of hourly meter readings and matching weather data — running entirely
+         in your browser via TensorFlow.js, no server involved. This dashboard breaks down the consumption
+         pattern, what the model actually leans on to predict it, and how accurate it is on data it never
+         trained on.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="predict.html">Run a forecast →</a>
+        <a class="btn btn-ghost" href="#model">Jump to model performance</a>
+      </div>
+    </section>
+
+    <section id="overview">
+      <div class="section-head">
+        <div class="eyebrow">Overview</div>
+        <h2>The dataset at a glance</h2>
+      </div>
+      <div class="grid grid-4" id="statGrid">
+        <div class="stat-cell"><div class="stat-label">Records</div><div class="stat-value">—</div></div>
+        <div class="stat-cell"><div class="stat-label">Date range</div><div class="stat-value">—</div></div>
+        <div class="stat-cell"><div class="stat-label">Avg. consumption</div><div class="stat-value">—</div></div>
+        <div class="stat-cell"><div class="stat-label">Peak reading</div><div class="stat-value">—</div></div>
+      </div>
+    </section>
+
+    <section id="trends">
+      <div class="section-head">
+        <div class="eyebrow">Trends</div>
+        <h2>Daily consumption over the full year</h2>
+        <p class="section-sub">Daily mean with the day's min/max band, so seasonal swings and one-off spikes are both visible.</p>
+      </div>
+      <div class="panel">
+        <div class="chart-wrap tall"><canvas id="trendChart"></canvas></div>
+      </div>
+    </section>
+
+    <section id="seasonality">
+      <div class="section-head">
+        <div class="eyebrow">Seasonality</div>
+        <h2>When consumption actually happens</h2>
+        <p class="section-sub">Average electricity use grouped by hour of day, day of week, and calendar month.</p>
+      </div>
+      <div class="row-3">
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">By hour of day</span></div>
+          <div class="chart-wrap short"><canvas id="hourChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">By day of week</span></div>
+          <div class="chart-wrap short"><canvas id="dowChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">By month</span></div>
+          <div class="chart-wrap short"><canvas id="monthChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="factors">
+      <div class="section-head">
+        <div class="eyebrow">Analysis</div>
+        <h2>What actually drives consumption?</h2>
+        <p class="section-sub">Two different lenses on "the main factor": raw correlation in the data, versus how much the
+           trained model's accuracy degrades when a feature is scrambled (permutation importance) — the latter reflects
+           what the model actually relies on, not just what happens to correlate.</p>
+      </div>
+      <div class="row-2">
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-title">Correlation with electricity use</span>
+            <span class="panel-note">weather &amp; calendar features</span>
+          </div>
+          <div class="rank-list" id="corrList"><div class="panel-note">Loading…</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-title">Model permutation importance</span>
+            <span class="panel-note" id="impNote">top drivers</span>
+          </div>
+          <div class="rank-list" id="impList"><div class="panel-note">Loading…</div></div>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:20px;" id="factorCallout">
+        <div class="icon">◆</div>
+        <div>
+          <p><b>Main factor:</b> <span id="factorText">computing…</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="model">
+      <div class="section-head">
+        <div class="eyebrow">Model performance</div>
+        <h2>Accuracy on unseen data</h2>
+        <p class="section-sub">Metrics computed on a chronological hold-out test split (data the model never trained or tuned on).</p>
+      </div>
+      <div class="grid grid-4" id="metricGrid">
+        <div class="stat-cell"><div class="stat-label">MAE</div><div class="stat-value">—</div></div>
+        <div class="stat-cell"><div class="stat-label">RMSE</div><div class="stat-value">—</div></div>
+        <div class="stat-cell"><div class="stat-label">MAPE</div><div class="stat-value">—</div></div>
+        <div class="stat-cell"><div class="stat-label">R²</div><div class="stat-value">—</div></div>
+      </div>
+
+      <div class="row-2" style="margin-top:20px;">
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-title">Test set: actual vs predicted</span>
+            <span class="panel-note">first 14 days of the hold-out set</span>
+          </div>
+          <div class="chart-wrap"><canvas id="testLineChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-title">Predicted vs actual</span>
+            <span class="panel-note">full test set</span>
+          </div>
+          <div class="chart-wrap"><canvas id="testScatterChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>LSTM electricity-consumption forecaster — trained on hourly data, Nov 2022–Aug 2023. Runs 100% client-side (TensorFlow.js).</span>
+    <span>Design language borrowed from <a href="https://mukminmuwahhid.github.io/mukmin-portfolio/" target="_blank" rel="noopener">mukminmuwahhid.github.io</a></span>
+  </footer>
+
+  <script src="js/vendor/chart.umd.min.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

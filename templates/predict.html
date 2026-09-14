@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Predict — Electricity Forecast{% endblock %}
+{% block content %}
+
+<section class="hero" style="padding-bottom:0;">
+  <div class="eyebrow">Interactive forecast</div>
+  <h1>Predict any hour <span class="accent">— 1 to 72 hours ahead.</span></h1>
+  <p>Pick a starting hour and a horizon; the model recursively forecasts forward, feeding each prediction back in as
+     its own lag/rolling features — exactly like a real deployment would. Since the app has no live weather feed,
+     the forecast window is limited to the historical period, using recorded weather as a stand-in for a forecast
+     feed. That also means you get a ground-truth line to compare against, wherever it's available.</p>
+</section>
+
+<section id="controls" style="padding-top:32px;">
+  <div class="panel">
+    <div class="form-panel">
+      <div class="field">
+        <label for="startInput">Start hour</label>
+        <input type="datetime-local" id="startInput" step="3600">
+        <div class="field-note" id="rangeNote">loading valid range…</div>
+      </div>
+      <div class="field">
+        <label for="horizonInput">Horizon (hours ahead)</label>
+        <div class="range-row">
+          <input type="range" id="horizonInput" min="1" max="72" value="24">
+          <span class="range-val" id="horizonVal">24h</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="runBtn" type="button">Forecast →</button>
+    </div>
+    <div class="alert alert-error" id="errorBox"></div>
+  </div>
+</section>
+
+<section id="results" style="padding-top:32px;">
+  <div class="grid grid-3" id="resultMetrics" style="display:none;">
+    <div class="stat-cell"><div class="stat-label">MAE over window</div><div class="stat-value">—</div></div>
+    <div class="stat-cell"><div class="stat-label">RMSE over window</div><div class="stat-value">—</div></div>
+    <div class="stat-cell"><div class="stat-label">Horizon</div><div class="stat-value">—</div></div>
+  </div>
+
+  <div class="panel" style="margin-top:20px;">
+    <div class="panel-head">
+      <span class="panel-title">Forecast</span>
+      <span class="panel-note" id="chartNote">run a forecast to see results</span>
+    </div>
+    <div class="chart-wrap tall"><canvas id="forecastChart"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span class="panel-title">Hour-by-hour</span></div>
+    <div class="table-wrap">
+      <table class="hours-table" id="hoursTable">
+        <thead><tr><th>Timestamp</th><th>Predicted</th><th>Actual</th><th>Error</th></tr></thead>
+        <tbody><tr><td colspan="4" class="panel-note">No forecast yet.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/predict.js') }}"></script>
+{% endblock %}
