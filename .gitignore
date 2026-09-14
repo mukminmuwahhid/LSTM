@@ -5,3 +5,8 @@ models/
 outputs/
 .venv/
 .claude/
+
+# Served from Supabase Storage instead (see README) — kept locally by
+# src/export_web.py for re-upload after retraining, not tracked in git.
+docs/data/*.json
+docs/model/*.json

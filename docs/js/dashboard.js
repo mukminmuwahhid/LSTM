@@ -52,7 +52,7 @@
   }
 
   async function loadOverview() {
-    const data = await getJSON('data/overview.json');
+    const data = await getJSON(assetUrl('data/overview.json'));
     const cells = document.querySelectorAll('#statGrid .stat-cell');
     setStat(cells[0], data.n_rows.toLocaleString());
     setStat(cells[1], `${data.date_start.slice(0, 10)}<span class="unit"> to</span><br>${data.date_end.slice(0, 10)}`);
@@ -68,7 +68,7 @@
   }
 
   async function loadTrend() {
-    const data = await getJSON('data/timeseries.json');
+    const data = await getJSON(assetUrl('data/timeseries.json'));
     const p = chartPalette();
     new Chart(document.getElementById('trendChart'), {
       type: 'line',
@@ -99,7 +99,7 @@
   }
 
   async function loadSeasonality() {
-    const data = await getJSON('data/seasonality.json');
+    const data = await getJSON(assetUrl('data/seasonality.json'));
     const p = chartPalette();
     const barOpts = (labels, values, color) => ({
       type: 'bar',
@@ -116,13 +116,13 @@
   }
 
   async function loadCorrelation() {
-    const data = await getJSON('data/correlation.json');
+    const data = await getJSON(assetUrl('data/correlation.json'));
     renderRankList(document.getElementById('corrList'), data.weather_time.labels.slice(0, 10), data.weather_time.values.slice(0, 10));
     return data;
   }
 
   async function loadImportance() {
-    const data = await getJSON('data/importance.json');
+    const data = await getJSON(assetUrl('data/importance.json'));
     if (!data.available) {
       document.getElementById('impList').innerHTML = '<div class="panel-note">Not computed for this build.</div>';
       return null;
@@ -133,7 +133,7 @@
   }
 
   async function loadTestPredictions() {
-    const data = await getJSON('data/test_predictions.json');
+    const data = await getJSON(assetUrl('data/test_predictions.json'));
     const p = chartPalette();
     new Chart(document.getElementById('testLineChart'), {
       type: 'line',

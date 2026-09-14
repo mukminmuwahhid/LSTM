@@ -45,10 +45,10 @@ const ForecastEngine = (function () {
   async function init() {
     if (state) return state;
     const [history, meta, scalers, model] = await Promise.all([
-      fetch('data/history.json').then((r) => r.json()),
-      fetch('data/meta.json').then((r) => r.json()),
-      fetch('data/scalers.json').then((r) => r.json()),
-      loadTfjsModel('model/weights.json'),
+      fetch(assetUrl('data/history.json')).then((r) => r.json()),
+      fetch(assetUrl('data/meta.json')).then((r) => r.json()),
+      fetch(assetUrl('data/scalers.json')).then((r) => r.json()),
+      loadTfjsModel(assetUrl('model/weights.json')),
     ]);
 
     const elecByTs = new Map();
