@@ -62,7 +62,7 @@ no live weather feed, valid start/horizon combinations stay inside the historica
 period, which doubles as a backtest: you get an actual-vs-predicted comparison for
 free wherever ground truth exists.
 
-## Deploy to GitHub Pages (docs/)
+## Deploy to GitHub Pages (docs/) + Supabase
 
 GitHub Pages only serves static files — it can't run Flask or Python. `docs/` is a
 full rebuild of the same dashboard + predictor that runs **entirely in the browser**
@@ -73,32 +73,37 @@ and the recursive multi-hour forecasting logic is ported line-for-line from
 `src/forecast.py` to `docs/js/forecast.js`. It was verified to match the Python
 model's output to float32 precision before shipping.
 
-**Re-export after retraining** — if you retrain the model, regenerate the site's data:
+The exported JSON (historical readings, model weights, scalers, precomputed
+dashboard aggregates) is **not committed to git** — it's hosted in a public Supabase
+Storage bucket instead (`docs/js/config.js` points at it) and fetched at runtime.
+This keeps the raw historical electricity/weather data out of git history and keeps
+the repo small.
+
+**Live config:**
+- Supabase project: `https://wqapdlssacjfkiobbsxx.supabase.co`
+- Public bucket: `lstm-data`, containing `data/*.json` and `model/weights.json`
+- Pages site: `https://mukminmuwahhid.github.io/LSTM/`
+
+**Re-export after retraining:**
 
 ```
 C:\Users\mukmi\pyenvs\lstm\Scripts\python.exe -m src.export_web
 ```
 
-This overwrites `docs/model/weights.json`, `docs/data/*.json` (scalers, full hourly
-history, and precomputed dashboard aggregates).
+This regenerates `docs/model/weights.json` and `docs/data/*.json` locally. Then
+re-upload them: in the Supabase dashboard, **Storage → lstm-data**, go into the
+`data/` folder and `model/` folder and upload the regenerated files, overwriting the
+old ones (drag-and-drop; confirm "replace" if prompted). No code or git changes
+needed — the site picks up new data automatically on next page load.
 
-**Publish it:**
+**Publish code changes** (anything under `docs/js`, `docs/*.html`, `docs/css`, or the
+rest of the repo) the normal way:
 
-1. Create a new repository on GitHub (public, so Pages can serve for free).
-2. From this folder:
-   ```
-   git remote add origin https://github.com/<your-username>/<repo-name>.git
-   git branch -M main
-   git push -u origin main
-   ```
-3. On GitHub: **Settings → Pages → Build and deployment → Source: "Deploy from a
-   branch"**, then **Branch: `main`, folder: `/docs`** → Save.
-4. Your site will be live at `https://<your-username>.github.io/<repo-name>/`
-   within a minute or two.
+```
+git add -A
+git commit -m "..."
+git push
+```
 
-**Before making the repo public**, note that `docs/data/history.json` contains your
-full historical electricity + weather data (Nov 2022–Aug 2023), and it's necessarily
-public once the site is live — that's what lets the predictor run without a backend.
-If you'd rather not publish the raw multi-file project (the 28 MB legacy notebook,
-the original `data/*.csv|xlsx`, etc.) alongside it, you can push only `docs/` to its
-own repo instead of this whole folder.
+GitHub Pages redeploys automatically within a minute or two of a push to `main`
+(**Settings → Pages → Deploy from a branch → `main` / `/docs`**, already configured).
